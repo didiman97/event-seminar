@@ -20,24 +20,146 @@ export default function DashboardOverviewPage() {
   const { data: session } = useSession();
   const { toast } = useToast();
   const [stats, setStats] = useState<DashboardStats>({
-    ticketsCount: 2,
-    certificatesCount: 1,
-    transactionsCount: 1,
-    points: 120
+    ticketsCount: 0,
+    certificatesCount: 0,
+    transactionsCount: 0,
+    points: 0
   });
 
   const [badges, setBadges] = useState([
-    { name: "Early Explorer", desc: "Registered for your first webinar.", icon: Zap, unlocked: true },
-    { name: "Premium VIP", desc: "Purchased a VIP event pass.", icon: Trophy, unlocked: true },
-    { name: "Tech Graduate", desc: "Earned a certified credential.", icon: Award, unlocked: true },
-    { name: "Alpha Contributor", desc: "Attend 5+ summits.", icon: Shield, unlocked: false }
+    { name: "Penjelajah Awal", desc: "Terdaftar untuk webinar pertama Anda.", icon: Zap, unlocked: false },
+    { name: "VIP Premium", desc: "Membeli tiket VIP atau Berbayar.", icon: Trophy, unlocked: false },
+    { name: "Lulusan Teknologi", desc: "Memperoleh sertifikat kelulusan terverifikasi.", icon: Award, unlocked: false },
+    { name: "Kontributor Alfa", desc: "Menghadiri 5+ event.", icon: Shield, unlocked: false }
   ]);
 
-  const [activity, setActivity] = useState([
-    { type: "TICKET", text: "Registered for AI & Deep Learning Summit", date: "Today, 10:24 AM" },
-    { type: "PAYMENT", text: "Transaction SETTLEMENT verified for IDR 199,000", date: "Yesterday, 3:15 PM" },
-    { type: "CERTIFICATE", text: "Generated Certificate #SV-AI-2026", date: "June 25, 2026" }
-  ]);
+  const [activity, setActivity] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        // Fetch user tickets
+        const ticketsRes = await fetch("/api/user/tickets");
+        const ticketsData = await ticketsRes.json();
+
+        // Fetch user transactions
+        const transRes = await fetch("/api/user/transactions");
+        const transData = await transRes.json();
+
+        if (ticketsRes.ok && transRes.ok) {
+          const userTickets = ticketsData.tickets || [];
+          const userTransactions = transData.transactions || [];
+
+          // 1. Calculate stats
+          const activeTickets = userTickets.filter((t: any) => t.status === "ACTIVE");
+          
+          const currentTime = new Date().getTime();
+          const completedTickets = activeTickets.filter((t: any) => t.checkedIn === true);
+
+          const certificatesCount = completedTickets.length;
+          const ticketsCount = activeTickets.length;
+          const transactionsCount = userTransactions.length;
+
+          // Points formula: 50 points per registration + 100 points per certificate completed
+          const points = (activeTickets.length * 50) + (certificatesCount * 100);
+
+          setStats({
+            ticketsCount,
+            certificatesCount,
+            transactionsCount,
+            points
+          });
+
+          // 2. Determine achievements/badges
+          setBadges([
+            { 
+              name: "Penjelajah Awal", 
+              desc: "Terdaftar untuk webinar pertama Anda.", 
+              icon: Zap, 
+              unlocked: activeTickets.length > 0 
+            },
+            { 
+              name: "VIP Premium", 
+              desc: "Membeli tiket VIP atau Berbayar.", 
+              icon: Trophy, 
+              unlocked: activeTickets.some((t: any) => t.ticketType === "PAID" || t.ticketType === "VIP") 
+            },
+            { 
+              name: "Lulusan Teknologi", 
+              desc: "Memperoleh sertifikat kelulusan terverifikasi.", 
+              icon: Award, 
+              unlocked: certificatesCount > 0 
+            },
+            { 
+              name: "Kontributor Alfa", 
+              desc: "Menghadiri 5+ event.", 
+              icon: Shield, 
+              unlocked: completedTickets.length >= 5 
+            }
+          ]);
+
+          // 3. Compile timeline activity
+          const compiledActivity: any[] = [];
+
+          // Add registration activity
+          activeTickets.slice(0, 2).forEach((t: any) => {
+            compiledActivity.push({
+              type: "TICKET",
+              text: `Terdaftar untuk event: ${t.eventTitle}`,
+              date: new Date(t.createdAt).toLocaleDateString("id-ID", {
+                day: "numeric",
+                month: "short",
+                hour: "2-digit",
+                minute: "2-digit"
+              })
+            });
+          });
+
+          // Add certificate generation activity
+          completedTickets.slice(0, 2).forEach((t: any) => {
+            compiledActivity.push({
+              type: "CERTIFICATE",
+              text: `Sertifikat diterbitkan: #${t.ticketNumber}`,
+              date: t.eventDate
+            });
+          });
+
+          // Add transactions activity
+          userTransactions.slice(0, 2).forEach((tx: any) => {
+            compiledActivity.push({
+              type: "PAYMENT",
+              text: `Transaksi ${tx.paymentStatus} sebesar IDR ${tx.amount.toLocaleString()}`,
+              date: new Date(tx.createdAt).toLocaleDateString("id-ID", {
+                day: "numeric",
+                month: "short"
+              })
+            });
+          });
+
+          // Fallback if no activity is found
+          if (compiledActivity.length === 0) {
+            compiledActivity.push({
+              type: "INFO",
+              text: "Selamat datang di SeminarVerse! Ikuti event pertama Anda untuk mulai mengisi riwayat aktivitas.",
+              date: "Baru saja"
+            });
+          }
+
+          setActivity(compiledActivity.slice(0, 5));
+        }
+      } catch (err) {
+        console.error("Dashboard overview fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (session?.user) {
+      fetchDashboardData();
+    }
+  }, [session]);
 
   return (
     <div className="space-y-6">
@@ -49,20 +171,20 @@ export default function DashboardOverviewPage() {
       >
         <div className="absolute top-0 right-0 h-32 w-32 bg-cyan-400/5 rounded-full blur-3xl" />
         <h1 className="text-xl sm:text-2xl font-extrabold text-white">
-          Welcome back, {session?.user?.name || "Participant"}!
+          Selamat datang kembali, {session?.user?.name || "Peserta"}!
         </h1>
         <p className="text-xs text-slate-400 mt-1 max-w-lg leading-relaxed">
-          Manage your active webinar slots, check Midtrans transaction receipts, and download your verification certificates.
+          Kelola webinar aktif Anda, periksa riwayat transaksi Midtrans, dan unduh sertifikat penyelesaian Anda.
         </p>
       </motion.div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "My Tickets", value: stats.ticketsCount, icon: Calendar, color: "text-cyan-400" },
-          { label: "Certificates", value: stats.certificatesCount, icon: Award, color: "text-emerald-400" },
-          { label: "Payments", value: stats.transactionsCount, icon: CreditCard, color: "text-purple-400" },
-          { label: "User Points", value: stats.points, icon: Trophy, color: "text-yellow-400" }
+          { label: "Tiket Saya", value: stats.ticketsCount, icon: Calendar, color: "text-cyan-400" },
+          { label: "Sertifikat", value: stats.certificatesCount, icon: Award, color: "text-emerald-400" },
+          { label: "Pembayaran", value: stats.transactionsCount, icon: CreditCard, color: "text-purple-400" },
+          { label: "Poin Pengguna", value: stats.points, icon: Trophy, color: "text-yellow-400" }
         ].map((stat, idx) => {
           const Icon = stat.icon;
           return (
@@ -84,7 +206,7 @@ export default function DashboardOverviewPage() {
         {/* Left Col - Timeline */}
         <div className="lg:col-span-2 space-y-4">
           <div className="glass rounded-2xl border border-white/5 p-5 bg-navy-card/20 space-y-4">
-            <h3 className="text-sm font-bold text-slate-200">Recent Activity Timeline</h3>
+            <h3 className="text-sm font-bold text-slate-200">Riwayat Aktivitas Terbaru</h3>
             <div className="relative border-l border-white/5 pl-4 space-y-5 py-2">
               {activity.map((act, idx) => (
                 <div key={idx} className="relative">
@@ -108,7 +230,7 @@ export default function DashboardOverviewPage() {
           <div className="glass rounded-2xl border border-white/5 p-5 bg-navy-card/25 space-y-4">
             <h3 className="text-sm font-bold text-slate-200 flex items-center gap-1.5">
               <Trophy className="h-4.5 w-4.5 text-yellow-400" />
-              <span>Earned Achievements</span>
+              <span>Pencapaian yang Diperoleh</span>
             </h3>
             <div className="space-y-3">
               {badges.map((badge, idx) => {

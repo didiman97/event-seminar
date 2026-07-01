@@ -24,12 +24,19 @@ export default function AdminEventsPage() {
   // Form Fields
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("Technology");
+  const [customCategory, setCustomCategory] = useState("");
+  const [showCustomInput, setShowCustomInput] = useState(false);
   const [ticketPrice, setTicketPrice] = useState("199000");
   const [quota, setQuota] = useState("100");
   const [startDate, setStartDate] = useState("");
   const [location, setLocation] = useState("Zoom Webinar");
   const [isOnline, setIsOnline] = useState(true);
-  const [selectedSpeakerId, setSelectedSpeakerId] = useState(MOCK_SPEAKERS[0].id);
+  const [selectedSpeakerId, setSelectedSpeakerId] = useState("");
+
+  const [dbSpeakers, setDbSpeakers] = useState<any[]>([]);
+
+  const PRESETS = ["Technology", "Finance", "Marketing", "Design"];
+  const allSpeakers = [...dbSpeakers, ...MOCK_SPEAKERS.filter(ms => !dbSpeakers.some(ds => ds.id === ms.id))];
 
   useEffect(() => {
     async function loadData() {
@@ -43,26 +50,62 @@ export default function AdminEventsPage() {
         setLoading(false);
       }
     }
+
+    async function loadSpeakersList() {
+      try {
+        const res = await fetch("/api/admin/speakers");
+        const data = await res.json();
+        if (res.ok && Array.isArray(data)) {
+          setDbSpeakers(data.map((u: any) => ({
+            id: u.id,
+            name: u.name,
+            photo: u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}`,
+            bio: u.bio || "",
+            company: u.company || "",
+            position: u.position || "",
+            socialMedia: {
+              twitter: u.twitter || undefined,
+              linkedin: u.linkedin || undefined,
+              github: u.github || undefined
+            }
+          })));
+        }
+      } catch (err) {
+        console.error("Error loading speakers list for dropdown:", err);
+      }
+    }
+
     loadData();
+    loadSpeakersList();
   }, []);
 
   const handleOpenAdd = () => {
     setEditingEvent(null);
     setTitle("");
     setCategory("Technology");
+    setCustomCategory("");
+    setShowCustomInput(false);
     setTicketPrice("199000");
     setQuota("100");
     setStartDate(new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16));
     setLocation("Zoom Webinar");
     setIsOnline(true);
-    setSelectedSpeakerId(MOCK_SPEAKERS[0].id);
+    setSelectedSpeakerId(allSpeakers[0]?.id || MOCK_SPEAKERS[0].id);
     setModalOpen(true);
   };
 
   const handleOpenEdit = (evt: Event) => {
     setEditingEvent(evt);
     setTitle(evt.title);
-    setCategory(evt.category);
+    if (PRESETS.includes(evt.category)) {
+      setCategory(evt.category);
+      setCustomCategory("");
+      setShowCustomInput(false);
+    } else {
+      setCategory("custom");
+      setCustomCategory(evt.category);
+      setShowCustomInput(true);
+    }
     setTicketPrice(String(evt.ticketPrice));
     setQuota(String(evt.quota));
     setStartDate(new Date(evt.startDate).toISOString().slice(0, 16));
@@ -79,7 +122,9 @@ export default function AdminEventsPage() {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !startDate || !location) {
+    const finalCategory = showCustomInput ? customCategory.trim() : category;
+
+    if (!title || !startDate || !location || !finalCategory) {
       toast("Input required", "Please fill in all the required parameters.", "info");
       return;
     }
@@ -89,11 +134,11 @@ export default function AdminEventsPage() {
     setTimeout(() => {
       setModalLoading(false);
       
-      const assignedSpeaker = MOCK_SPEAKERS.find((s) => s.id === selectedSpeakerId) || MOCK_SPEAKERS[0];
+      const assignedSpeaker = allSpeakers.find((s) => s.id === selectedSpeakerId) || allSpeakers[0] || MOCK_SPEAKERS[0];
 
       const eventPayload = {
         title,
-        category,
+        category: finalCategory,
         ticketPrice: Number(ticketPrice),
         quota: Number(quota),
         startDate: new Date(startDate).toISOString(),
@@ -105,7 +150,7 @@ export default function AdminEventsPage() {
           : "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&q=80&w=800",
         speaker: assignedSpeaker,
         description: "Drafted via admin CRUD panel.",
-        seo: { metaTitle: title, metaDescription: title, keywords: category }
+        seo: { metaTitle: title, metaDescription: title, keywords: finalCategory }
       };
 
       if (editingEvent) {
@@ -255,14 +300,24 @@ export default function AdminEventsPage() {
             <div className="space-y-1.5">
               <label className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Category</label>
               <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                value={showCustomInput ? "custom" : category}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "custom") {
+                    setShowCustomInput(true);
+                    setCategory("custom");
+                  } else {
+                    setShowCustomInput(false);
+                    setCategory(val);
+                  }
+                }}
                 className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-200 w-full focus:outline-none focus:border-cyan-400 transition-all font-semibold"
               >
                 <option value="Technology" className="bg-[#0b1626]">Technology</option>
                 <option value="Finance" className="bg-[#0b1626]">Finance</option>
                 <option value="Marketing" className="bg-[#0b1626]">Marketing</option>
                 <option value="Design" className="bg-[#0b1626]">Design</option>
+                <option value="custom" className="bg-[#0b1626]">+ Kategori Kustom</option>
               </select>
             </div>
             <div className="space-y-1.5">
@@ -275,6 +330,20 @@ export default function AdminEventsPage() {
               />
             </div>
           </div>
+
+          {showCustomInput && (
+            <div className="space-y-1.5 animate-fadeIn">
+              <label className="text-[10px] text-cyan-400 uppercase tracking-wider font-semibold">Custom Category Name</label>
+              <input
+                type="text"
+                required
+                value={customCategory}
+                onChange={(e) => setCustomCategory(e.target.value)}
+                placeholder="e.g. Culinary, Photography, Development..."
+                className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-slate-200 w-full focus:outline-none focus:border-cyan-400 transition-colors placeholder:text-slate-700"
+              />
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -318,7 +387,7 @@ export default function AdminEventsPage() {
               onChange={(e) => setSelectedSpeakerId(e.target.value)}
               className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-200 w-full focus:outline-none focus:border-cyan-400 font-semibold"
             >
-              {MOCK_SPEAKERS.map((spk) => (
+              {allSpeakers.map((spk) => (
                 <option key={spk.id} value={spk.id} className="bg-[#0b1626]">
                   {spk.name} ({spk.position} at {spk.company})
                 </option>
@@ -350,7 +419,7 @@ export default function AdminEventsPage() {
             <button
               type="submit"
               disabled={modalLoading}
-              className="flex-grow bg-primary hover:bg-primary/80 border border-primary/20 text-white font-bold text-xs py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow"
+              className="flex-grow bg-primary hover:bg-primary/80 border border-primary/25 text-white font-bold text-xs py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow"
             >
               {modalLoading ? (
                 <RefreshCw className="h-4.5 w-4.5 animate-spin" />

@@ -4,6 +4,19 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { db } from "@/lib/db";
 import PDFDocument from "pdfkit";
 import QRCode from "qrcode";
+import fs from "fs";
+import path from "path";
+
+// Intercept readFileSync to bypass virtualized Next.js/Turbopack folder paths for standard AFM fonts
+const originalReadFileSync = fs.readFileSync;
+(fs as any).readFileSync = function (filePath: any, options?: any) {
+  if (typeof filePath === "string" && filePath.includes("pdfkit") && filePath.endsWith(".afm")) {
+    const filename = path.basename(filePath);
+    const correctedPath = path.join(process.cwd(), "node_modules", "pdfkit", "js", "data", filename);
+    return originalReadFileSync(correctedPath, options);
+  }
+  return originalReadFileSync.apply(this, arguments as any);
+};
 
 export async function GET(
   req: Request,
@@ -16,26 +29,77 @@ export async function GET(
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const resolvedParams = await params;
-    const ticketId = resolvedParams.id;
+    const { id: ticketId } = await params;
 
-    // 2. Fetch Ticket details with user association
-    const ticket = await db.ticket.findUnique({
+    // 2. Fetch Ticket or Certificate details
+    let ticket = await db.ticket.findUnique({
       where: { id: ticketId },
       include: { user: true }
-    });
+    }) as any;
 
-    if (!ticket) {
-      return new NextResponse("Certificate ticket record not found", { status: 404 });
+    let certNumber = "";
+    let eventTitle = "";
+    let eventDate = "";
+    let recipientName = "";
+
+    if (ticket) {
+      // Verify ownership
+      if (ticket.userId !== (session.user as any).id && (session.user as any).role !== "ADMIN") {
+        return new NextResponse("Forbidden access", { status: 403 });
+      }
+      // Verify attendance check-in status
+      if (!ticket.checkedIn && (session.user as any).role !== "ADMIN") {
+        return new NextResponse("Anda harus melakukan absensi kehadiran sebelum dapat mengunduh sertifikat.", { status: 400 });
+      }
+      certNumber = ticket.ticketNumber;
+      eventTitle = ticket.eventTitle;
+      eventDate = ticket.eventDate;
+      recipientName = ticket.user.name;
+    } else {
+      // Try to find in Certificate table
+      const certificate = await db.certificate.findUnique({
+        where: { id: ticketId },
+        include: { user: true }
+      });
+      if (!certificate) {
+        return new NextResponse("Certificate record not found", { status: 404 });
+      }
+      // Verify ownership
+      if (certificate.userId !== (session.user as any).id && (session.user as any).role !== "ADMIN") {
+        return new NextResponse("Forbidden access", { status: 403 });
+      }
+      certNumber = certificate.certificateNumber;
+      eventTitle = certificate.eventTitle;
+      eventDate = certificate.eventDate;
+      recipientName = certificate.participantName || certificate.user.name;
     }
 
-    // Verify ownership
-    if (ticket.userId !== (session.user as any).id && (session.user as any).role !== "ADMIN") {
-      return new NextResponse("Forbidden access", { status: 403 });
+    // Load dynamic settings from config
+    const settingsPath = path.join(process.cwd(), "src", "data", "settings.json");
+    let settings = {
+      certTitle: "CERTIFICATE OF COMPLETION",
+      certIssuer: "SeminarVerse Academy",
+      certSignatureName: "Sarah Jenkins",
+      certSignatureRole: "Sarah Jenkins, Program Chair"
+    };
+
+    try {
+      if (fs.existsSync(settingsPath)) {
+        const settingsData = originalReadFileSync(settingsPath, "utf-8");
+        const parsed = JSON.parse(settingsData);
+        settings = {
+          certTitle: parsed.certTitle || settings.certTitle,
+          certIssuer: parsed.certIssuer || settings.certIssuer,
+          certSignatureName: parsed.certSignatureName || settings.certSignatureName,
+          certSignatureRole: parsed.certSignatureRole || settings.certSignatureRole
+        };
+      }
+    } catch (err) {
+      console.error("Error reading PDF settings:", err);
     }
 
     // 3. Generate QR code representation buffer for verify url
-    const verificationUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/certificate/verify?ticket=${ticket.ticketNumber}`;
+    const verificationUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/certificate/verify?ticket=${certNumber}`;
     const qrDataUrl = await QRCode.toDataURL(verificationUrl, { margin: 1 });
     const qrBuffer = Buffer.from(qrDataUrl.replace(/^data:image\/png;base64,/, ""), "base64");
 
@@ -73,7 +137,7 @@ export async function GET(
     doc.fillColor("#22D3EE")
        .fontSize(14)
        .font("Helvetica-Bold")
-       .text("SEMINARVERSE ACADEMY CREDENTIAL", 0, 80, { align: "center", characterSpacing: 1 });
+       .text(settings.certIssuer.toUpperCase(), 0, 80, { align: "center", characterSpacing: 1 });
 
     doc.moveDown(0.5);
     
@@ -81,7 +145,7 @@ export async function GET(
     doc.fillColor("#94A3B8")
        .fontSize(10)
        .font("Helvetica")
-       .text("CERTIFICATE OF COMPLETION", { align: "center" });
+       .text(settings.certTitle.toUpperCase(), { align: "center" });
 
     // Ribbon horizontal divider line
     doc.moveDown(1);
@@ -103,7 +167,7 @@ export async function GET(
     doc.fillColor("#FFFFFF")
        .fontSize(28)
        .font("Helvetica-Bold")
-       .text(ticket.user.name, { align: "center" });
+       .text(recipientName, { align: "center" });
 
     doc.moveDown(1);
 
@@ -119,7 +183,7 @@ export async function GET(
     doc.fillColor("#22D3EE")
        .fontSize(16)
        .font("Helvetica-Bold")
-       .text(ticket.eventTitle, { align: "center" });
+       .text(eventTitle, { align: "center" });
 
     // Footer row positions
     const footerY = doc.page.height - 130;
@@ -133,11 +197,11 @@ export async function GET(
     doc.fillColor("#FFFFFF")
        .fontSize(10)
        .font("Helvetica-Bold")
-       .text("Sarah Jenkins", 100, footerY + 8)
+       .text(settings.certSignatureName, 100, footerY + 8)
        .fillColor("#94A3B8")
        .fontSize(7)
        .font("Helvetica")
-       .text("Sarah Jenkins, Program Chair", 100, footerY + 22);
+       .text(settings.certSignatureRole, 100, footerY + 22);
 
     // Draw validation QR code pass
     doc.image(qrBuffer, doc.page.width - 180, footerY - 40, { width: 80, height: 80 });
@@ -151,10 +215,10 @@ export async function GET(
     doc.fillColor("#94A3B8")
        .fontSize(8)
        .font("Helvetica-Bold")
-       .text(`Issue Date: ${ticket.eventDate}`, 300, footerY)
+       .text(`Issue Date: ${eventDate}`, 300, footerY)
        .fontSize(8)
        .font("Helvetica")
-       .text(`Verification ID: ${ticket.ticketNumber}`, 300, footerY + 15);
+       .text(`Verification ID: ${certNumber}`, 300, footerY + 15);
 
     // Close and stream PDF document
     doc.end();
@@ -165,7 +229,7 @@ export async function GET(
     return new NextResponse(new Uint8Array(pdfBuffer), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="certificate-${ticket.ticketNumber}.pdf"`
+        "Content-Disposition": `inline; filename="certificate-${certNumber}.pdf"`
       }
     });
   } catch (error: any) {

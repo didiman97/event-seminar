@@ -12,7 +12,7 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -44,7 +44,7 @@ function LoginContent() {
       if (res?.error) {
         toast("Login Error", res.error, "error");
       } else {
-        toast("Success", "Welcome back to SeminarVerse!", "success");
+        toast("Success", "Selamat datang kembali di Rumah Digital!", "success");
         router.push("/dashboard");
         router.refresh();
       }
@@ -72,14 +72,14 @@ function LoginContent() {
         <div className="text-center mb-6">
           <Link href="/" className="inline-flex items-center gap-2 mb-3">
             <div className="bg-gradient-to-tr from-primary to-accent h-9 w-9 rounded-xl flex items-center justify-center border border-white/10 shadow-lg shadow-primary/20">
-              <span className="text-white font-extrabold text-sm">SV</span>
+              <span className="text-white font-extrabold text-sm">RD</span>
             </div>
             <span className="font-extrabold text-lg tracking-tight text-white">
-              Seminar<span className="text-cyan-400">Verse</span>
+              Rumah<span className="text-cyan-400"> Digital</span>
             </span>
           </Link>
-          <h2 className="text-2xl font-bold text-slate-100">Welcome Back</h2>
-          <p className="text-xs text-slate-400 mt-1">Sign in to manage your tickets and certificates</p>
+          <h2 className="text-2xl font-bold text-slate-100">Selamat Datang Kembali</h2>
+          <p className="text-xs text-slate-400 mt-1">Sign in untuk mendapatkan tiket dan sertifikat</p>
         </div>
 
         <div className="glass rounded-3xl border border-white/5 p-8 shadow-2xl bg-navy-card/60">
@@ -109,7 +109,7 @@ function LoginContent() {
                   href="/auth/forgot-password"
                   className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors"
                 >
-                  Forgot Password?
+                  Lupa Password?
                 </Link>
               </div>
               <div className="relative">

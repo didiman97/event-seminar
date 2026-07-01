@@ -99,7 +99,7 @@ export default function BlogListingPage() {
               {/* Thumbnail */}
               <Link href={`/blog/${blog.slug}`} className="h-48 relative overflow-hidden block">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={blog.thumbnail} alt={blog.title} className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300" />
+                <img src={blog.thumbnail} alt={blog.thumbnailAlt || blog.title} className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300" />
                 <div className="absolute top-4 left-4 bg-primary/80 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white border border-primary/20">
                   {blog.category}
                 </div>
@@ -126,7 +126,8 @@ export default function BlogListingPage() {
                   </Link>
 
                   <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed">
-                    {blog.content.replace(/[#*`]/g, "").substring(0, 150)}...
+                    {blog.seo?.metaDescription || 
+                     (blog.content.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/[#*`]/g, "").substring(0, 150) + "...")}
                   </p>
                 </div>
 

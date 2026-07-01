@@ -12,11 +12,27 @@ export const Navbar: React.FC = () => {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [logoText, setLogoText] = useState("SeminarVerse");
+  const [logoAbbreviation, setLogoAbbreviation] = useState("SV");
+  const [logoImageUrl, setLogoImageUrl] = useState("");
+
+  React.useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data) {
+          setLogoText(data.logoText || "SeminarVerse");
+          setLogoAbbreviation(data.logoAbbreviation || "SV");
+          setLogoImageUrl(data.logoImageUrl || "");
+        }
+      })
+      .catch((err) => console.error("Error fetching navbar settings:", err));
+  }, []);
 
   const links = [
-    { name: "Explore Events", href: "/events", icon: Compass },
+    { name: "Jelajahi Event", href: "/events", icon: Compass },
     { name: "Blog", href: "/blog", icon: Compass },
-    { name: "Verify Certificate", href: "/certificate/verify", icon: Compass },
+    { name: "Verifikasi Sertifikat", href: "/certificate/verify", icon: Compass },
   ];
 
   const handleSignOut = () => {
@@ -24,17 +40,24 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-40 bg-[#07111F]/70 backdrop-blur-md border-b border-white/5 shadow-lg">
+    <nav className="fixed top-0 left-0 right-0 z-40 bg-[#07111F]/70 backdrop-blur-md border-b border-b-white/5 shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <div className="bg-gradient-to-tr from-primary to-accent h-9 w-9 rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 border border-white/10">
-              <span className="text-white font-extrabold text-sm tracking-tighter">SV</span>
-            </div>
-            <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-white via-slate-100 to-cyan-400 bg-clip-text text-transparent">
-              Seminar<span className="text-cyan-400">Verse</span>
-            </span>
+            {logoImageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoImageUrl} alt={logoText} className="h-9 object-contain" />
+            ) : (
+              <>
+                <div className="bg-gradient-to-tr from-primary to-accent h-9 w-9 rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 border border-white/10">
+                  <span className="text-white font-extrabold text-sm tracking-tighter">{logoAbbreviation}</span>
+                </div>
+                <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-white via-slate-100 to-cyan-400 bg-clip-text text-transparent">
+                  {logoText}
+                </span>
+              </>
+            )}
           </Link>
 
           {/* Desktop Navigation Links */}
@@ -93,7 +116,7 @@ export const Navbar: React.FC = () => {
                         className="absolute right-0 mt-2 w-52 glass rounded-xl shadow-2xl border border-white/10 z-20 py-2 overflow-hidden"
                       >
                         <div className="px-4 py-2 border-b border-white/5">
-                          <p className="text-xs text-slate-500">Logged in as</p>
+                          <p className="text-xs text-slate-500">Masuk sebagai</p>
                           <p className="text-sm font-semibold text-slate-200 truncate">{session.user?.email}</p>
                         </div>
 
@@ -105,7 +128,7 @@ export const Navbar: React.FC = () => {
                             className="flex items-center gap-2 px-4 py-2 text-sm text-slate-300 hover:text-cyan-400 hover:bg-white/5 transition-colors"
                           >
                             <Shield className="h-4 w-4 text-cyan-400" />
-                            <span>Admin Panel</span>
+                            <span>Panel Admin</span>
                           </Link>
                         )}
 
@@ -115,7 +138,7 @@ export const Navbar: React.FC = () => {
                           className="flex items-center gap-2 px-4 py-2 text-sm text-slate-300 hover:text-cyan-400 hover:bg-white/5 transition-colors"
                         >
                           <LayoutDashboard className="h-4 w-4 text-primary" />
-                          <span>User Dashboard</span>
+                          <span>Dashboard User</span>
                         </Link>
 
                         <button
@@ -126,7 +149,7 @@ export const Navbar: React.FC = () => {
                           className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors text-left"
                         >
                           <LogOut className="h-4 w-4" />
-                          <span>Sign Out</span>
+                          <span>Keluar</span>
                         </button>
                       </motion.div>
                     </>
@@ -139,13 +162,13 @@ export const Navbar: React.FC = () => {
                   href="/auth/login"
                   className="text-sm font-semibold text-slate-300 hover:text-white transition-colors"
                 >
-                  Sign In
+                  Masuk
                 </Link>
                 <Link
                   href="/auth/register"
                   className="bg-primary hover:bg-primary/80 border border-primary/20 shadow-lg shadow-primary/10 hover:shadow-primary/20 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all"
                 >
-                  Register
+                  Daftar
                 </Link>
               </div>
             )}
@@ -222,7 +245,7 @@ export const Navbar: React.FC = () => {
                         onClick={() => setIsOpen(false)}
                         className="block px-3 py-2 rounded-xl text-base font-medium text-cyan-400 hover:bg-white/5"
                       >
-                        Admin Control Panel
+                        Panel Kontrol Admin
                       </Link>
                     )}
 
@@ -231,7 +254,7 @@ export const Navbar: React.FC = () => {
                       onClick={() => setIsOpen(false)}
                       className="block px-3 py-2 rounded-xl text-base font-medium text-primary hover:bg-white/5"
                     >
-                      User Dashboard
+                      Dashboard User
                     </Link>
 
                     <button
@@ -241,7 +264,7 @@ export const Navbar: React.FC = () => {
                       }}
                       className="w-full text-left block px-3 py-2 rounded-xl text-base font-medium text-red-400 hover:bg-red-500/10"
                     >
-                      Sign Out
+                      Keluar
                     </button>
                   </>
                 ) : (
@@ -251,14 +274,14 @@ export const Navbar: React.FC = () => {
                       onClick={() => setIsOpen(false)}
                       className="block text-center py-2.5 rounded-xl border border-white/10 text-slate-300 text-sm font-semibold hover:bg-white/5"
                     >
-                      Sign In
+                      Masuk
                     </Link>
                     <Link
                       href="/auth/register"
                       onClick={() => setIsOpen(false)}
                       className="block text-center py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/80"
                     >
-                      Register
+                      Daftar
                     </Link>
                   </div>
                 )}

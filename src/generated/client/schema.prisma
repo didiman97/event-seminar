@@ -1,0 +1,118 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
+}
+
+model User {
+  id            String         @id @default(uuid())
+  name          String
+  email         String         @unique
+  passwordHash  String
+  role          String         @default("PARTICIPANT") // ADMIN, EDITOR, SPEAKER, PARTICIPANT
+  avatar        String?
+  points        Int            @default(0)
+  isApproved    Boolean        @default(true)
+  company       String?        @default("")
+  position      String?        @default("")
+  bio           String?        @default("")
+  twitter       String?        @default("")
+  linkedin      String?        @default("")
+  github        String?        @default("")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  tickets       Ticket[]
+  transactions  Transaction[]
+  certificates  Certificate[]
+  notifications Notification[]
+  badges        Badge[]
+}
+
+model Ticket {
+  id            String       @id @default(uuid())
+  ticketNumber  String       @unique
+  ticketType    String       @default("FREE") // FREE, PAID, VIP
+  price         Float        @default(0)
+  status        String       @default("PENDING") // PENDING, ACTIVE, CANCELLED
+  eventId       String
+  eventTitle    String
+  eventDate     String
+  qrCodeUrl     String?
+  voucherCode   String?
+  userId        String
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactionId String?
+  transaction   Transaction? @relation(fields: [transactionId], references: [id])
+  checkedIn     Boolean      @default(false)
+  checkedInAt   DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Transaction {
+  id            String   @id @default(uuid())
+  orderId       String   @unique
+  amount        Float
+  paymentStatus String   @default("PENDING") // PENDING, SETTLEMENT, EXPIRED, FAILED
+  paymentType   String?
+  token         String?
+  redirectUrl   String?
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tickets       Ticket[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Certificate {
+  id                String   @id @default(uuid())
+  certificateNumber String   @unique
+  participantName   String
+  eventId           String
+  eventTitle        String
+  eventDate         String
+  qrCodeUrl         String?
+  verificationHash  String   @unique
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  type      String   @default("INFO")
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Voucher {
+  id            String   @id @default(uuid())
+  code          String   @unique
+  discountType  String   @default("PERCENT")
+  discountValue Float
+  quota         Int
+  usedCount     Int      @default(0)
+  expiryDate    DateTime
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Badge {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  icon        String
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}

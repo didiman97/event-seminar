@@ -1,0 +1,14 @@
+[
+  {
+    "q": "Bagaimana cara mengikuti webinar online?",
+    "a": "Setelah mendaftar, tautan pertemuan Zoom akan muncul langsung di dalam Dashboard Peserta Anda di bawah menu 'Event Saya'. Kami juga mengirimkan email konfirmasi."
+  },
+  {
+    "q": "Apakah saya bisa memverifikasi keaslian sertifikat?",
+    "a": "Ya. Setiap sertifikat memiliki nomor registrasi unik dan kode QR kriptografis. Siapa pun dapat memindai atau mencarinya di halaman verifikasi publik kami."
+  },
+  {
+    "q": "Metode pembayaran apa saja yang didukung?",
+    "a": "Kami terintegrasi dengan Midtrans Sandbox yang mendukung QRIS, Virtual Account, Transfer Bank, dan E-wallet seperti GoPay atau OVO."
+  }
+]

@@ -7,7 +7,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col md:flex-row min-h-[calc(100vh-4rem)] pt-16 md:pt-0">
+    <div className="flex flex-col md:flex-row min-h-screen pt-16 md:pt-0">
       {/* Admin navigation bar - bottom nav on mobile */}
       <DashboardSidebar isAdmin={true} />
       

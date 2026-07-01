@@ -16,6 +16,24 @@ export default function HomePage() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [activeCategory, setActiveCategory] = useState("All");
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
+  const [headline, setHeadline] = useState("Empower Your Skills at Webinars & Seminars");
+  const [description, setDescription] = useState("Join active developer classes, product workshops, and global keynote masterclasses. Generate automated fraud-proof QR credentials instantly.");
+  const [btnText, setBtnText] = useState("Explore Events");
+  const [btnLink, setBtnLink] = useState("/events");
+  const [heroTagline, setHeroTagline] = useState("Next-Generation Headless CMS Platform");
+  const [sectionWebinarTitle, setSectionWebinarTitle] = useState("Featured Webinar");
+  const [sectionEventsTitle, setSectionEventsTitle] = useState("Upcoming Events");
+  const [sectionEventsSubtitle, setSectionEventsSubtitle] = useState("Filter classes by focus areas and secure early-bird ticket access");
+  const [sectionSpeakersTitle, setSectionSpeakersTitle] = useState("Keynote Speakers");
+  const [sectionSpeakersSubtitle, setSectionSpeakersSubtitle] = useState("Learn directly from world-class industry engineers and product builders");
+  const [sectionTestimonialsTitle, setSectionTestimonialsTitle] = useState("What Participants Say");
+  const [sectionTestimonialsSubtitle, setSectionTestimonialsSubtitle] = useState("Read honest feedback from tech workers and scaling developers");
+  const [sectionFaqTitle, setSectionFaqTitle] = useState("Frequently Asked Questions");
+  const [sectionFaqSubtitle, setSectionFaqSubtitle] = useState("Everything you need to know about certificates, ticketing, and checkouts");
+  const [heroCtaTitle, setHeroCtaTitle] = useState("Ready to Upskill Your Engineering Career?");
+  const [heroCtaDescription, setHeroCtaDescription] = useState("Register now to receive early-bird vouchers, bookmark premium webinars, and automate your certificates.");
+
+  const [faqs, setFaqs] = useState<{q: string, a: string}[]>([]);
 
   useEffect(() => {
     async function loadData() {
@@ -23,11 +41,47 @@ export default function HomePage() {
       const allBlogs = await getBlogs();
       setEvents(allEvents);
       setBlogs(allBlogs);
+
+      try {
+        const res = await fetch("/api/settings");
+        const data = await res.json();
+        if (data) {
+          if (data.heroHeadline) setHeadline(data.heroHeadline);
+          if (data.heroDescription) setDescription(data.heroDescription);
+          if (data.heroBtnText) setBtnText(data.heroBtnText);
+          if (data.heroBtnLink) setBtnLink(data.heroBtnLink);
+          if (data.heroTagline) setHeroTagline(data.heroTagline);
+          if (data.sectionWebinarTitle) setSectionWebinarTitle(data.sectionWebinarTitle);
+          if (data.sectionEventsTitle) setSectionEventsTitle(data.sectionEventsTitle);
+          if (data.sectionEventsSubtitle) setSectionEventsSubtitle(data.sectionEventsSubtitle);
+          if (data.sectionSpeakersTitle) setSectionSpeakersTitle(data.sectionSpeakersTitle);
+          if (data.sectionSpeakersSubtitle) setSectionSpeakersSubtitle(data.sectionSpeakersSubtitle);
+          if (data.sectionTestimonialsTitle) setSectionTestimonialsTitle(data.sectionTestimonialsTitle);
+          if (data.sectionTestimonialsSubtitle) setSectionTestimonialsSubtitle(data.sectionTestimonialsSubtitle);
+          if (data.sectionFaqTitle) setSectionFaqTitle(data.sectionFaqTitle);
+          if (data.sectionFaqSubtitle) setSectionFaqSubtitle(data.sectionFaqSubtitle);
+          if (data.heroCtaTitle) setHeroCtaTitle(data.heroCtaTitle);
+          if (data.heroCtaDescription) setHeroCtaDescription(data.heroCtaDescription);
+        }
+      } catch (err) {
+        console.error("Error loading home settings:", err);
+      }
+
+      try {
+        const res = await fetch("/api/faqs");
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setFaqs(data);
+        }
+      } catch (err) {
+        console.error("Error loading FAQs:", err);
+      }
     }
+
     loadData();
   }, []);
 
-  const categories = ["All", "Technology", "Finance", "Marketing", "Design"];
+  const categories = ["All", ...Array.from(new Set(events.map(e => e.category)))];
 
   const filteredEvents = activeCategory === "All" 
     ? events 
@@ -57,21 +111,6 @@ export default function HomePage() {
     }
   ];
 
-  const faqs = [
-    {
-      q: "How do I join an online webinar?",
-      a: "Once registered, the Zoom meeting link will appear directly inside your Participant Dashboard under 'My Events'. We also send an email confirmation containing the entry pass."
-    },
-    {
-      q: "Can I verify my certificate authenticity?",
-      a: "Yes. Every generated certificate features a unique registration number and cryptographic QR code. Anyone can scan or search it on our public verification page."
-    },
-    {
-      q: "What payment gateways are supported?",
-      a: "We integrate with Midtrans Sandbox supporting QRIS, major Virtual Accounts, Bank Transfers, and regional E-wallets like GoPay or OVO."
-    }
-  ];
-
   return (
     <div className="relative">
       {/* 1. Hero Section */}
@@ -88,7 +127,7 @@ export default function HomePage() {
             className="inline-flex items-center gap-2 bg-white/5 border border-white/10 px-3.5 py-1.5 rounded-full text-xs font-semibold text-cyan-400 text-glow"
           >
             <Zap className="h-3.5 w-3.5" />
-            <span>Next-Generation Headless CMS Platform</span>
+            <span>{heroTagline}</span>
           </motion.div>
 
           <motion.h1
@@ -97,7 +136,7 @@ export default function HomePage() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-tight max-w-4xl mx-auto"
           >
-            Empower Your Skills at <span className="bg-gradient-to-r from-primary via-cyan-400 to-white bg-clip-text text-transparent">Webinars & Seminars</span>
+            {headline}
           </motion.h1>
 
           <motion.p
@@ -106,7 +145,7 @@ export default function HomePage() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-sm sm:text-base text-slate-400 max-w-2xl mx-auto leading-relaxed"
           >
-            Join active developer classes, product workshops, and global keynote masterclasses. Generate automated fraud-proof QR credentials instantly.
+            {description}
           </motion.p>
 
           <motion.div
@@ -116,10 +155,10 @@ export default function HomePage() {
             className="flex flex-wrap gap-4 justify-center pt-4"
           >
             <Link
-              href="/events"
+              href={btnLink}
               className="bg-primary hover:bg-primary/80 border border-primary/20 text-white font-bold text-sm px-6 py-3 rounded-xl transition-all shadow-lg shadow-primary/20 hover:scale-[1.02] flex items-center gap-2"
             >
-              <span>Explore Events</span>
+              <span>{btnText}</span>
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
@@ -136,7 +175,7 @@ export default function HomePage() {
       {featuredEvent && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10">
           <div className="px-6 py-3 border-l-4 border-cyan-400 mb-6">
-            <h2 className="text-xl font-black text-slate-100 uppercase tracking-widest text-glow">Featured Webinar</h2>
+            <h2 className="text-xl font-black text-slate-100 uppercase tracking-widest text-glow">{sectionWebinarTitle}</h2>
           </div>
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -197,8 +236,8 @@ export default function HomePage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
           <div>
-            <h2 className="text-2xl font-extrabold text-slate-100">Upcoming Events</h2>
-            <p className="text-xs text-slate-400 mt-1">Filter classes by focus areas and secure early-bird ticket access</p>
+            <h2 className="text-2xl font-extrabold text-slate-100">{sectionEventsTitle}</h2>
+            <p className="text-xs text-slate-400 mt-1">{sectionEventsSubtitle}</p>
           </div>
 
           {/* Filter Categories */}
@@ -262,8 +301,8 @@ export default function HomePage() {
       {/* 5. Speaker Showcase */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
         <div className="text-center max-w-xl mx-auto mb-10">
-          <h2 className="text-2xl font-extrabold text-slate-100">Keynote Speakers</h2>
-          <p className="text-xs text-slate-400 mt-1">Learn directly from world-class industry engineers and product builders</p>
+          <h2 className="text-2xl font-extrabold text-slate-100">{sectionSpeakersTitle}</h2>
+          <p className="text-xs text-slate-400 mt-1">{sectionSpeakersSubtitle}</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {events.length > 0 && events.slice(0, 3).map((evt) => (
@@ -275,8 +314,8 @@ export default function HomePage() {
       {/* 6. Testimonials */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
         <div className="text-center max-w-xl mx-auto mb-10">
-          <h2 className="text-2xl font-extrabold text-slate-100">What Participants Say</h2>
-          <p className="text-xs text-slate-400 mt-1">Read honest feedback from tech workers and scaling developers</p>
+          <h2 className="text-2xl font-extrabold text-slate-100">{sectionTestimonialsTitle}</h2>
+          <p className="text-xs text-slate-400 mt-1">{sectionTestimonialsSubtitle}</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {testimonials.map((t, idx) => (
@@ -304,8 +343,8 @@ export default function HomePage() {
       {/* 7. FAQ accordions */}
       <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
         <div className="text-center mb-10">
-          <h2 className="text-2xl font-extrabold text-slate-100">Frequently Asked Questions</h2>
-          <p className="text-xs text-slate-400 mt-1">Everything you need to know about certificates, ticketing, and checkouts</p>
+          <h2 className="text-2xl font-extrabold text-slate-100">{sectionFaqTitle}</h2>
+          <p className="text-xs text-slate-400 mt-1">{sectionFaqSubtitle}</p>
         </div>
         <div className="space-y-4">
           {faqs.map((faq, idx) => {
@@ -335,10 +374,10 @@ export default function HomePage() {
         <div className="glass rounded-3xl border border-white/5 bg-gradient-to-r from-primary/10 to-accent/5 p-8 sm:p-12 text-center relative overflow-hidden">
           <div className="absolute top-0 right-0 h-40 w-40 bg-cyan-400/5 rounded-full blur-3xl" />
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white max-w-lg mx-auto leading-tight">
-            Ready to Upskill Your Engineering Career?
+            {heroCtaTitle}
           </h2>
           <p className="text-xs text-slate-400 max-w-md mx-auto mt-3 leading-relaxed">
-            Register now to receive early-bird vouchers, bookmark premium webinars, and automate your certificates.
+            {heroCtaDescription}
           </p>
           <div className="mt-6 flex justify-center gap-4">
             <Link
@@ -348,14 +387,35 @@ export default function HomePage() {
               Sign Up Now
             </Link>
             <Link
-              href="/events"
+              href={btnLink}
               className="glass hover:bg-white/10 text-slate-300 font-bold text-xs px-5 py-3 rounded-xl transition-all border border-white/5"
             >
-              View Seminars
+              {btnText}
             </Link>
           </div>
         </div>
       </section>
+
+      {/* Dynamic RankMath FAQ Schema */}
+      {faqs.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              "mainEntity": faqs.map((f) => ({
+                "@type": "Question",
+                "name": f.q,
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": f.a
+                }
+              }))
+            })
+          }}
+        />
+      )}
     </div>
   );
 }

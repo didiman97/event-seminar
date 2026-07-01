@@ -18,13 +18,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
+  const cleanDescription = blog.seo?.metaDescription || 
+    (blog.content.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim().substring(0, 160));
+
   return {
     title: `${blog.title} | SeminarVerse Blog`,
-    description: blog.content.substring(0, 160).replace(/[#*`]/g, ""),
-    keywords: blog.seo.keywords,
+    description: cleanDescription,
+    keywords: blog.seo?.keywords || blog.category,
     openGraph: {
       title: blog.title,
-      description: blog.content.substring(0, 160).replace(/[#*`]/g, ""),
+      description: cleanDescription,
       images: [{ url: blog.thumbnail }],
       type: "article",
       publishedTime: blog.publishedAt,

@@ -32,6 +32,17 @@ export const BlogDetailClient: React.FC<ClientProps> = ({ blog, relatedBlogs }) 
 
   // Helper to parse simple markdown to JSX with code block styling
   const renderMarkdown = (markdown: string) => {
+    // Detect HTML tags to handle WYSIWYG editor output natively
+    const isHtml = /<\/?[a-z][\s\S]*>/i.test(markdown);
+    if (isHtml) {
+      return (
+        <div 
+          dangerouslySetInnerHTML={{ __html: markdown }} 
+          className="prose prose-invert max-w-none text-sm sm:text-base text-slate-300 leading-relaxed font-sans space-y-4"
+        />
+      );
+    }
+
     const blocks = markdown.split("\n\n");
     return blocks.map((block, idx) => {
       const trimmed = block.trim();
@@ -153,11 +164,82 @@ export const BlogDetailClient: React.FC<ClientProps> = ({ blog, relatedBlogs }) 
         {/* 3. Cover Banner */}
         <div className="rounded-3xl overflow-hidden h-64 sm:h-[350px] border border-white/5 shadow-2xl">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={blog.thumbnail} alt={blog.title} className="w-full h-full object-cover" />
+          <img src={blog.thumbnail} alt={blog.thumbnailAlt || blog.title} className="w-full h-full object-cover" />
+          {blog.thumbnailDesc && (
+            <span className="text-[10px] text-slate-500 italic block mt-2 text-right">Ket: {blog.thumbnailDesc}</span>
+          )}
         </div>
 
         {/* 4. Article Content body */}
-        <article className="prose prose-invert max-w-none pt-4">
+        <article className="blog-content-body max-w-none pt-4 relative">
+          <style>{`
+            .blog-content-body h1 {
+              font-size: 1.875rem !important;
+              font-weight: 800 !important;
+              color: #ffffff !important;
+              margin-top: 2rem !important;
+              margin-bottom: 1rem !important;
+              display: block !important;
+              line-height: 1.25 !important;
+            }
+            .blog-content-body h2 {
+              font-size: 1.5rem !important;
+              font-weight: 700 !important;
+              color: #f8fafc !important;
+              margin-top: 1.75rem !important;
+              margin-bottom: 0.75rem !important;
+              display: block !important;
+              border-b: 1px solid rgba(255, 255, 255, 0.05) !important;
+              padding-bottom: 0.5rem !important;
+              line-height: 1.3 !important;
+            }
+            .blog-content-body h3 {
+              font-size: 1.25rem !important;
+              font-weight: 600 !important;
+              color: #e2e8f0 !important;
+              margin-top: 1.5rem !important;
+              margin-bottom: 0.5rem !important;
+              display: block !important;
+              line-height: 1.4 !important;
+            }
+            .blog-content-body p {
+              font-size: 0.95rem !important;
+              color: #cbd5e1 !important;
+              line-height: 1.75 !important;
+              margin-top: 1rem !important;
+              margin-bottom: 1rem !important;
+            }
+            .blog-content-body ul {
+              list-style-type: disc !important;
+              list-style-position: inside !important;
+              margin-top: 1rem !important;
+              margin-bottom: 1rem !important;
+              padding-left: 1rem !important;
+              color: #cbd5e1 !important;
+            }
+            .blog-content-body li {
+              margin-top: 0.5rem !important;
+              margin-bottom: 0.5rem !important;
+              line-height: 1.6 !important;
+            }
+            .blog-content-body a {
+              color: #22d3ee !important;
+              text-decoration: underline !important;
+              font-weight: 600 !important;
+              transition: color 0.2s !important;
+            }
+            .blog-content-body a:hover {
+              color: #67e8f9 !important;
+            }
+            .blog-content-body img {
+              border-radius: 1rem !important;
+              border: 1px solid rgba(255,255,255,0.1) !important;
+              box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3) !important;
+              margin: 1.5rem auto !important;
+              max-width: 100% !important;
+              display: block !important;
+            }
+          `}</style>
           {renderMarkdown(blog.content)}
         </article>
 
@@ -169,7 +251,7 @@ export const BlogDetailClient: React.FC<ClientProps> = ({ blog, relatedBlogs }) 
               {relatedBlogs.map((b) => (
                 <div key={b.id} className="glass rounded-2xl border border-white/5 p-4 flex gap-4 items-center bg-navy-card/25 hover:border-cyan-500/10 transition-colors">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={b.thumbnail} alt={b.title} className="h-16 w-24 object-cover rounded-lg shrink-0" />
+                  <img src={b.thumbnail} alt={b.thumbnailAlt || b.title} className="h-16 w-24 object-cover rounded-lg shrink-0" />
                   <div className="space-y-1">
                     <Link href={`/blog/${b.slug}`}>
                       <h4 className="text-xs sm:text-sm font-bold text-slate-200 hover:text-cyan-400 transition-colors line-clamp-2 leading-snug">

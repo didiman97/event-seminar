@@ -1,0 +1,68 @@
+[
+  {
+    "id": "blog-7708",
+    "title": "Ini Judul artikel",
+    "slug": "ini-judul-artikel",
+    "category": "Marketing",
+    "readTime": "5 min read",
+    "thumbnail": "/uploads/1782816572612-7_Tools_Gratis_untuk_Riset_Produk_Terlaris_di_berbagai_MarketPlace.jpg",
+    "thumbnailAlt": "Ini judul alt gambar",
+    "thumbnailName": "1782816572612-7_Tools_Gratis_untuk_Riset_Produk_Terlaris_di_berbagai_MarketPlace.jpg",
+    "thumbnailDesc": "Ini deskripsi gambar",
+    "content": "<h2><b>Ini judul H2&nbsp;</b></h2><div><h2>Ini deskripsi artikel\n</h2><br></div><h3>&nbsp;### Ini Judul H3\nIni deskripsi artikel</h3><p>indnsinfjkasnm deskripsi</p>",
+    "publishedAt": "2026-06-30",
+    "author": {
+      "name": "Admin",
+      "avatar": "https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff"
+    },
+    "seo": {
+      "metaTitle": "Ini meta title",
+      "metaDescription": "Ini Meta deskripsi",
+      "keywords": "Marketing"
+    }
+  },
+  {
+    "id": "blog-1",
+    "title": "Why Headless CMS is the Future of Event Marketing",
+    "slug": "why-headless-cms-future-event-marketing",
+    "thumbnail": "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800",
+    "thumbnailAlt": "Ilustrasi analitik pemasaran digital dengan layar komputer menampilkan statistik grafik",
+    "thumbnailName": "marketing-headless-analytics.jpg",
+    "thumbnailDesc": "Dashboard analytics menampilkan grafik pertumbuhan registrasi event menggunakan Headless CMS stack",
+    "category": "Marketing",
+    "author": {
+      "name": "Elena Rostova",
+      "avatar": "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=100"
+    },
+    "publishedAt": "2026-06-25",
+    "readTime": "5 min read",
+    "content": "# The Rise of the Headless Event Stack\n\nIn the past, organizers relied solely on monolithic platforms like Eventbrite to sell tickets. While functional, these platforms restricted layout branding, SEO performance, and deep client integrations.\n\nToday, modern SaaS structures leverage a decoupled architecture: **Next.js App Router Frontend + Strapi Headless CMS + Midtrans Payment Hook**.\n\n## Core Benefits\n\n1. **Unrivaled Load Speeds**: Pre-rendering event landing pages with ISR (Incremental Static Regeneration) achieves a Lighthouse score of 95+ and cuts bounce rates in half.\n2. **SEO Dominance**: Dynamic rendering allows us to inject structured schema models (`JSON-LD`), driving organic search discoverability for tickets.\n3. **Integration Autonomy**: Hooking custom certificates and Midtrans checkouts into private APIs is far simpler than extending third-party platforms.\n\n```javascript\n// Example: Dynamic routing in Next.js\nexport async function generateMetadata({ params }) {\n  const event = await getEventBySlug(params.slug);\n  return {\n    title: event.title,\n    description: event.description,\n  };\n}\n```\n\nBy owning your tech stack, you own your data, user profiles, and ticketing fees.",
+    "seo": {
+      "metaTitle": "Why Headless CMS is the Future of Event Marketing",
+      "metaDescription": "An in-depth article analyzing how Next.js and Strapi optimize ticketing platforms.",
+      "keywords": "Headless CMS, Next.js, Strapi, Web Development"
+    }
+  },
+  {
+    "id": "blog-2",
+    "title": "Designing Seamless Checkout Experiences for Ticket Sales",
+    "slug": "designing-seamless-checkout-experiences",
+    "thumbnail": "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&q=80&w=800",
+    "thumbnailAlt": "Seseorang sedang melakukan pembayaran digital menggunakan kartu kredit dan laptop",
+    "thumbnailName": "seamless-checkout-experience.jpg",
+    "thumbnailDesc": "Proses checkout pembelian tiket kelas online secara instan menggunakan integrasi Midtrans payment gateway",
+    "category": "Design",
+    "author": {
+      "name": "Alex Rivera",
+      "avatar": "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=100"
+    },
+    "publishedAt": "2026-06-28",
+    "readTime": "7 min read",
+    "content": "# UX Patterns for High-Conversion Checkouts\n\nWhen a user decides to register for a seminar, every extra input field or slow page load reduces purchase intent by 10%. Optimizing the payment funnel is crucial to minimizing cart abandonment.\n\n## Key Checkout Strategies\n\n* **Keep Checkouts In-Context**: Use inline portals or overlay modals (such as Midtrans Snap) instead of redirecting the user to external payment pages.\n* **Instant Verification**: Confirm promo codes instantly without full page reloads.\n* **Streamlined Authentication**: Allow participants to checkout as guests or using one-click Google Sign-In.\n\n```typescript\n// Initiating a transaction with Midtrans Snap Client\nconst parameter = {\n  transaction_details: {\n    order_id: \"order-12345\",\n    gross_amount: 199000\n  },\n  credit_card: { secure: true }\n};\n```\n\nBy focusing on friction reduction, you can significantly boost registration numbers and ticketing revenue.",
+    "seo": {
+      "metaTitle": "UX Patterns for High-Conversion Checkouts",
+      "metaDescription": "Tips and scripts to design ticket checkout paths that scale.",
+      "keywords": "UX, Payments, Web Design, Checkout Conversion"
+    }
+  }
+]

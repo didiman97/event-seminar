@@ -40,6 +40,10 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid email or password");
         }
 
+        if (!user.isApproved) {
+          throw new Error("Akun Anda sedang menunggu persetujuan admin.");
+        }
+
         // Return user data matching Auth schema
         return {
           id: user.id,
@@ -89,4 +93,12 @@ export const authOptions: NextAuthOptions = {
 
 const handler = NextAuth(authOptions);
 
-export { handler as GET, handler as POST };
+export async function GET(req: Request, { params }: { params: Promise<any> }) {
+  const resolvedParams = await params;
+  return handler(req, { params: resolvedParams });
+}
+
+export async function POST(req: Request, { params }: { params: Promise<any> }) {
+  const resolvedParams = await params;
+  return handler(req, { params: resolvedParams });
+}

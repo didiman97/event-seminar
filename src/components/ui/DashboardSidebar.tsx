@@ -3,10 +3,10 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { 
   User, Calendar, CreditCard, LayoutDashboard, Settings, 
-  Ticket, Shield, BookOpen, Users, Award, Gift 
+  Ticket, Shield, BookOpen, Users, Award, Gift, QrCode, LogOut 
 } from "lucide-react";
 
 interface SidebarProps {
@@ -16,37 +16,121 @@ interface SidebarProps {
 export const DashboardSidebar: React.FC<SidebarProps> = ({ isAdmin = false }) => {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const [logoText, setLogoText] = React.useState("SeminarVerse");
+  const [logoAbbreviation, setLogoAbbreviation] = React.useState("SV");
+  const [logoImageUrl, setLogoImageUrl] = React.useState("");
+
+  React.useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data) {
+          setLogoText(data.logoText || "SeminarVerse");
+          setLogoAbbreviation(data.logoAbbreviation || "SV");
+          setLogoImageUrl(data.logoImageUrl || "");
+        }
+      })
+      .catch((err) => console.error("Error fetching sidebar settings:", err));
+  }, []);
 
   // Participant Links
   const participantLinks = [
-    { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
-    { name: "My Events", href: "/dashboard/events", icon: Calendar },
-    { name: "My Tickets", href: "/dashboard/tickets", icon: Ticket },
-    { name: "Payments", href: "/dashboard/payments", icon: CreditCard },
-    { name: "Settings", href: "/dashboard/settings", icon: Settings },
+    { name: "Ringkasan", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Event Saya", href: "/dashboard/events", icon: Calendar },
+    { name: "Tiket Saya", href: "/dashboard/tickets", icon: Ticket },
+    { name: "Sertifikat", href: "/dashboard/certificates", icon: Award },
+    { name: "Pembayaran", href: "/dashboard/payments", icon: CreditCard },
+    { name: "Pengaturan", href: "/dashboard/settings", icon: Settings },
   ];
 
   // Admin Links
   const adminLinks = [
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-    { name: "Events", href: "/admin/events", icon: Calendar },
-    { name: "Speakers", href: "/admin/speakers", icon: Users },
-    { name: "Blogs", href: "/admin/blogs", icon: BookOpen },
-    { name: "Vouchers", href: "/admin/vouchers", icon: Gift },
-    { name: "Users", href: "/admin/users", icon: Shield },
-    { name: "Certificates", href: "/admin/certificates", icon: Award },
+    { name: "Event", href: "/admin/events", icon: Calendar },
+    { name: "Pembicara", href: "/admin/speakers", icon: Users },
+    { name: "Absensi", href: "/admin/checkin", icon: QrCode },
+    { name: "Blog", href: "/admin/blogs", icon: BookOpen },
+    { name: "Voucher", href: "/admin/vouchers", icon: Gift },
+    { name: "Pengguna", href: "/admin/users", icon: Shield },
+    { name: "Sertifikat", href: "/admin/certificates", icon: Award },
+    { name: "Pengaturan", href: "/admin/settings", icon: Settings },
   ];
 
   const links = isAdmin ? adminLinks : participantLinks;
 
   return (
     <>
+      {/* Mobile Top Header Bar */}
+      <header className="md:hidden fixed top-0 left-0 right-0 h-16 z-40 bg-[#07111F]/70 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-4">
+        <Link href="/" className="flex items-center gap-2">
+          {logoImageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoImageUrl} alt={logoText} className="h-8 object-contain" />
+          ) : (
+            <>
+              <div className="bg-gradient-to-tr from-primary to-accent h-8 w-8 rounded-xl flex items-center justify-center border border-white/10 shadow-lg">
+                <span className="text-white font-extrabold text-xs tracking-tighter">{logoAbbreviation}</span>
+              </div>
+              <span className="font-extrabold text-md tracking-tight bg-gradient-to-r from-white via-slate-100 to-cyan-400 bg-clip-text text-transparent">
+                {logoText}
+              </span>
+            </>
+          )}
+        </Link>
+
+        {/* Mini profile avatar and logout button on the right */}
+        {session?.user && (
+          <div className="flex items-center gap-2">
+            <Link href="/dashboard/settings" className="flex items-center gap-2 p-1 rounded-xl hover:bg-white/5">
+              {session.user.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={session.user.image}
+                  alt="avatar"
+                  className="h-7 w-7 rounded-full object-cover border border-white/20"
+                />
+              ) : (
+                <div className="h-7 w-7 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center">
+                  <User className="h-3.5 w-3.5 text-cyan-400" />
+                </div>
+              )}
+            </Link>
+            <button
+              onClick={() => signOut({ callbackUrl: "/" })}
+              className="text-red-400 hover:text-red-300 p-1.5 hover:bg-white/5 rounded-xl transition-colors cursor-pointer"
+              title="Keluar"
+            >
+              <LogOut className="h-4.5 w-4.5" />
+            </button>
+          </div>
+        )}
+      </header>
+
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-64 glass border-r border-white/5 h-[calc(100vh-4rem)] sticky top-16 p-4 justify-between bg-navy-card/30">
+      <aside className="hidden md:flex flex-col w-64 glass border-r border-white/5 h-screen sticky top-0 p-4 justify-between bg-navy-card/30">
         <div className="space-y-6">
+          {/* Logo link to homepage */}
           <div className="px-3 py-2">
+            <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
+              {logoImageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logoImageUrl} alt={logoText} className="h-8 object-contain" />
+              ) : (
+                <>
+                  <div className="bg-gradient-to-tr from-primary to-accent h-8 w-8 rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 border border-white/10 shrink-0">
+                    <span className="text-white font-extrabold text-xs tracking-tighter">{logoAbbreviation}</span>
+                  </div>
+                  <span className="font-extrabold text-md tracking-tight bg-gradient-to-r from-white via-slate-100 to-cyan-400 bg-clip-text text-transparent">
+                    {logoText}
+                  </span>
+                </>
+              )}
+            </Link>
+          </div>
+
+          <div className="px-3 py-1 border-t border-white/5">
             <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
-              {isAdmin ? "Admin Console" : "Participant Center"}
+              {isAdmin ? "Konsol Admin" : "Pusat Peserta"}
             </span>
           </div>
 
@@ -72,24 +156,33 @@ export const DashboardSidebar: React.FC<SidebarProps> = ({ isAdmin = false }) =>
           </nav>
         </div>
 
-        {/* User Mini Profile */}
-        <div className="border-t border-white/5 pt-4 px-2 flex items-center gap-3">
-          {session?.user?.image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={session.user.image}
-              alt="avatar"
-              className="h-9 w-9 rounded-full object-cover border border-white/10"
-            />
-          ) : (
-            <div className="h-9 w-9 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center">
-              <User className="h-4.5 w-4.5 text-cyan-400" />
+        {/* User Mini Profile & Logout */}
+        <div className="border-t border-white/5 pt-4 px-2 flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            {session?.user?.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={session.user.image}
+                alt="avatar"
+                className="h-9 w-9 rounded-full object-cover border border-white/10"
+              />
+            ) : (
+              <div className="h-9 w-9 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center">
+                <User className="h-4.5 w-4.5 text-cyan-400" />
+              </div>
+            )}
+            <div className="flex-1 overflow-hidden">
+              <h5 className="text-xs font-bold text-slate-200 truncate">{session?.user?.name || "Peserta"}</h5>
+              <p className="text-[10px] text-slate-500 truncate">{session?.user?.email}</p>
             </div>
-          )}
-          <div className="flex-1 overflow-hidden">
-            <h5 className="text-xs font-bold text-slate-200 truncate">{session?.user?.name || "Participant"}</h5>
-            <p className="text-[10px] text-slate-500 truncate">{session?.user?.email}</p>
           </div>
+          <button
+            onClick={() => signOut({ callbackUrl: "/" })}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all border border-red-500/10 cursor-pointer"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Keluar</span>
+          </button>
         </div>
       </aside>
 

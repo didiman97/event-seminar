@@ -5,6 +5,7 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/generated/client"
 }
 
 model User {
@@ -15,6 +16,13 @@ model User {
   role          String         @default("PARTICIPANT") // ADMIN, EDITOR, SPEAKER, PARTICIPANT
   avatar        String?
   points        Int            @default(0)
+  isApproved    Boolean        @default(true)
+  company       String?        @default("")
+  position      String?        @default("")
+  bio           String?        @default("")
+  twitter       String?        @default("")
+  linkedin      String?        @default("")
+  github        String?        @default("")
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   tickets       Ticket[]
@@ -39,6 +47,8 @@ model Ticket {
   user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactionId  String?
   transaction    Transaction?   @relation(fields: [transactionId], references: [id])
+  checkedIn      Boolean        @default(false)
+  checkedInAt    DateTime?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 }

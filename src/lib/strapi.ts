@@ -39,6 +39,9 @@ export interface Blog {
   title: string;
   slug: string;
   thumbnail: string;
+  thumbnailAlt?: string;
+  thumbnailName?: string;
+  thumbnailDesc?: string;
   content: string;
   category: string;
   author: {
@@ -280,43 +283,34 @@ export async function getEventBySlug(slug: string): Promise<Event | null> {
 }
 
 export async function getBlogs(): Promise<Blog[]> {
-  if (!STRAPI_API_URL) {
+  if (typeof window === "undefined") {
+    // Server-side: read settings file directly to avoid HTTP request overhead
+    try {
+      const fs = require("fs");
+      const path = require("path");
+      const blogsPath = path.join(process.cwd(), "src", "data", "blogs.json");
+      if (fs.existsSync(blogsPath)) {
+        return JSON.parse(fs.readFileSync(blogsPath, "utf-8"));
+      }
+    } catch (err) {
+      console.error("Error reading blogs file on server, fallback to MOCK:", err);
+    }
     return MOCK_BLOGS;
-  }
-
-  try {
-    const res = await fetch(`${STRAPI_API_URL}/api/blogs?populate=author,seo`, {
-      headers: {
-        Authorization: `Bearer ${STRAPI_TOKEN}`,
-      },
-      next: { revalidate: 60 }
-    });
-    const data = await res.json();
-    return data.data;
-  } catch (error) {
-    console.error("Strapi fetch blogs error, using mock data:", error);
+  } else {
+    // Client-side: fetch from local API endpoint
+    try {
+      const res = await fetch("/api/blogs");
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (error) {
+      console.error("Error fetching blogs on client, fallback to MOCK:", error);
+    }
     return MOCK_BLOGS;
   }
 }
 
 export async function getBlogBySlug(slug: string): Promise<Blog | null> {
-  if (!STRAPI_API_URL) {
-    const mock = MOCK_BLOGS.find((b) => b.slug === slug);
-    return mock || null;
-  }
-
-  try {
-    const res = await fetch(`${STRAPI_API_URL}/api/blogs?filters[slug][$eq]=${slug}&populate=author,seo`, {
-      headers: {
-        Authorization: `Bearer ${STRAPI_TOKEN}`,
-      },
-      next: { revalidate: 60 }
-    });
-    const data = await res.json();
-    return data.data[0] || null;
-  } catch (error) {
-    console.error("Strapi fetch blog by slug error, using mock data:", error);
-    const mock = MOCK_BLOGS.find((b) => b.slug === slug);
-    return mock || null;
-  }
+  const blogs = await getBlogs();
+  return blogs.find((b) => b.slug === slug) || null;
 }

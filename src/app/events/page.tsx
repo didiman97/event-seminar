@@ -31,7 +31,7 @@ export default function EventsListingPage() {
     loadData();
   }, []);
 
-  const categories = ["All", "Technology", "Finance", "Marketing", "Design"];
+  const categories = ["All", ...Array.from(new Set(events.map((e) => e.category)))];
 
   // Filter events
   const filteredEvents = events.filter((evt) => {
